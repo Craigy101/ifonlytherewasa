@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -18,117 +18,148 @@ type ValidationState = {
 
 export function UsernameSetupForm() {
   const [username, setUsername] = useState("");
-  const [validation, setValidation] = useState<ValidationState>({
-    message: "",
-    type: "idle",
-  });
+  const [validation, setValidation] = useState<ValidationState>({ message: "", type: "idle" });
   const [checking, setChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const supabaseRef = useRef(createClient());
 
   const router = useRouter();
   const { user, refreshProfile } = useAuth();
 
-  // Validate username locally and check uniqueness with debounce
+  // Create Supabase client once per component instance
+  const supabase = useMemo(() => createClient(), []);
+
+  // Debounce + stale-response guard
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestCheckIdRef = useRef(0);
+
+  // Validate username locally + check server availability (debounced)
   useEffect(() => {
-    // 1. INSTANT LOCAL VALIDATION
-    // No debounce for things we can check in the browser
-    if (username.length === 0) {
+    const value = username.trim();
+
+    // cancel any in-flight debounce
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    // bump check id so older async responses can’t win
+    latestCheckIdRef.current += 1;
+    const checkId = latestCheckIdRef.current;
+
+    // Local validation (instant)
+    if (value.length === 0) {
       setValidation({ message: "", type: "idle" });
       setChecking(false);
       return;
     }
 
-    if (username.length < USERNAME_MIN) {
+    if (value.length < USERNAME_MIN) {
       setValidation({ message: "Too short", type: "error" });
       setChecking(false);
       return;
     }
 
-    if (!USERNAME_REGEX.test(username)) {
+    if (value.length > USERNAME_MAX) {
+      setValidation({ message: "Too long", type: "error" });
+      setChecking(false);
+      return;
+    }
+
+    if (!USERNAME_REGEX.test(value)) {
       setValidation({ message: "Invalid characters", type: "error" });
       setChecking(false);
       return;
     }
 
-    // 2. TRIGGER SERVER CHECK (Reduced to 300ms)
+    // Server check (debounced)
     setChecking(true);
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const { available, error } = await checkUsernameAvailability(username);
+        const res = await checkUsernameAvailability(value);
 
-        // Safety check: ensure the user hasn't typed more since this request started
-        if (username !== username) return;
+        // stale response guard
+        if (checkId !== latestCheckIdRef.current) return;
 
-        if (error) throw new Error();
+        if (res?.error) throw new Error("availability check failed");
 
         setValidation({
-          message: available ? "Available!" : "Taken",
-          type: available ? "success" : "error",
+          message: res.available ? "Available!" : "Taken",
+          type: res.available ? "success" : "error",
         });
       } catch {
+        if (checkId !== latestCheckIdRef.current) return;
         setValidation({ message: "Error checking name", type: "error" });
       } finally {
-        setChecking(false);
+        if (checkId === latestCheckIdRef.current) setChecking(false);
       }
-    }, 300); // 300ms is the "Goldilocks" zone for snappiness
+    }, 300);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [username]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
 
-    if (!user || validation.type !== "success" || submitting) return;
+    async (e: FormEvent) => {
+      e.preventDefault();
 
-    setSubmitting(true);
+      const value = username.trim().toLowerCase();
 
-    try {
-      const { error } = await supabaseRef.current
-        .from("profiles")
-        .update({ username })
-        .eq("id", user.id);
+      // block if not ready
+      if (!user || submitting || checking || validation.type !== "success") return;
 
-      if (error) {
-        setValidation({
-          message:
-            error.code === "23505"
-              ? "Username is already taken"
-              : "Something went wrong. Please try again.",
-          type: "error",
-        });
+      setSubmitting(true);
+
+      try {
+        // Upsert guards against missing profile rows if trigger/profile creation failed.
+        const { data, error } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, username: value }, { onConflict: "id" })
+          .select("id, username")
+          .single();
+
+        if (error) {
+          setValidation({
+            message:
+              error.code === "23505"
+                ? "Username is already taken"
+                : "Something went wrong. Please try again.",
+            type: "error",
+          });
+          return;
+        }
+
+        if (!data) {
+          setValidation({
+            message: "Profile not found. Please refresh and try again.",
+            type: "error",
+          });
+          return;
+        }
+
+        // IMPORTANT: await this so your “needs username” guard doesn’t bounce you back
+        try {
+          await refreshProfile();
+        } catch {
+          // If refresh fails, still navigate — DB is updated
+        }
+
+        router.replace("/");
+        router.refresh();
+      } catch {
+        setValidation({ message: "Something went wrong. Please try again.", type: "error" });
+      } finally {
         setSubmitting(false);
-        return;
       }
+    },
+    [username, user, submitting, checking, validation.type, supabase, refreshProfile, router]
+  );
 
-      // Refresh profile in the background — don't let it block navigation
-      refreshProfile().catch(() => { });
-      router.replace("/");
-    } catch {
-      setValidation({
-        message: "Something went wrong. Please try again.",
-        type: "error",
-      });
-      setSubmitting(false);
-    }
-  };
-
-  const isSubmitDisabled =
-    submitting || checking || validation.type !== "success";
+  const isSubmitDisabled = submitting || checking || validation.type !== "success";
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor="username"
-          className="text-sm font-medium text-content-secondary"
-        >
+        <label htmlFor="username" className="text-sm font-medium text-content-secondary">
           Username
         </label>
 
@@ -137,7 +168,7 @@ export function UsernameSetupForm() {
             id="username"
             type="text"
             value={username}
-            onChange={(e) => setUsername(e.target.value.trim())}
+            onChange={(e) => setUsername(e.target.value)} // don’t trim here; trim on validate/submit
             placeholder="cool_username"
             maxLength={USERNAME_MAX}
             autoFocus
@@ -160,14 +191,7 @@ export function UsernameSetupForm() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path
                   className="opacity-75"
                   fill="currentColor"
@@ -212,25 +236,9 @@ export function UsernameSetupForm() {
         )}
       >
         {submitting ? (
-          <svg
-            className="h-5 w-5 animate-spin"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
+          <svg className="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         ) : (
           "Claim Username"

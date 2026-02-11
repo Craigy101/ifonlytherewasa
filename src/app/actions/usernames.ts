@@ -5,8 +5,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
 
 export async function checkUsernameAvailability(username: string) {
+  const normalized = username.trim().toLowerCase();
+
   // 1. Server-side validation (never trust the client)
-  if (!username || username.length < 3 || !USERNAME_REGEX.test(username)) {
+  if (
+    !normalized ||
+    normalized.length < 3 ||
+    normalized.length > 20 ||
+    !USERNAME_REGEX.test(normalized)
+  ) {
     return { available: false, error: "Invalid username format" };
   }
 
@@ -16,7 +23,7 @@ export async function checkUsernameAvailability(username: string) {
     const { data, error } = await supabase
       .from("profiles")
       .select("id")
-      .eq("username", username)
+      .eq("username_lower", normalized)
       .maybeSingle();
 
     if (error) throw error;
