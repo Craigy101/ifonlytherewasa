@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { cn } from "@/lib/utils/cn";
+import { checkUsernameAvailability } from "@/app/actions/usernames";
 
 const USERNAME_MIN = 3;
 const USERNAME_MAX = 20;
@@ -31,10 +32,8 @@ export function UsernameSetupForm() {
 
   // Validate username locally and check uniqueness with debounce
   useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
+    // 1. INSTANT LOCAL VALIDATION
+    // No debounce for things we can check in the browser
     if (username.length === 0) {
       setValidation({ message: "", type: "idle" });
       setChecking(false);
@@ -42,59 +41,44 @@ export function UsernameSetupForm() {
     }
 
     if (username.length < USERNAME_MIN) {
-      setValidation({
-        message: `Username must be at least ${USERNAME_MIN} characters`,
-        type: "error",
-      });
-      setChecking(false);
-      return;
-    }
-
-    if (username.length > USERNAME_MAX) {
-      setValidation({
-        message: `Username must be at most ${USERNAME_MAX} characters`,
-        type: "error",
-      });
+      setValidation({ message: "Too short", type: "error" });
       setChecking(false);
       return;
     }
 
     if (!USERNAME_REGEX.test(username)) {
-      setValidation({
-        message: "Only letters, numbers, hyphens, and underscores are allowed",
-        type: "error",
-      });
+      setValidation({ message: "Invalid characters", type: "error" });
       setChecking(false);
       return;
     }
 
-    // Passed local validation - check uniqueness with debounce
+    // 2. TRIGGER SERVER CHECK (Reduced to 300ms)
     setChecking(true);
-    setValidation({ message: "Checking availability...", type: "idle" });
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const { data } = await supabaseRef.current
-          .from("profiles")
-          .select("id")
-          .eq("username", username)
-          .maybeSingle();
+        const { available, error } = await checkUsernameAvailability(username);
 
-        if (data) {
-          setValidation({ message: "Username is already taken", type: "error" });
-        } else {
-          setValidation({ message: "Username is available!", type: "success" });
-        }
+        // Safety check: ensure the user hasn't typed more since this request started
+        if (username !== username) return;
+
+        if (error) throw new Error();
+
+        setValidation({
+          message: available ? "Available!" : "Taken",
+          type: available ? "success" : "error",
+        });
       } catch {
-        setValidation({ message: "Could not check availability", type: "error" });
+        setValidation({ message: "Error checking name", type: "error" });
+      } finally {
+        setChecking(false);
       }
-      setChecking(false);
-    }, 500);
+    }, 300); // 300ms is the "Goldilocks" zone for snappiness
 
     return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [username]);
 
@@ -124,7 +108,7 @@ export function UsernameSetupForm() {
       }
 
       // Refresh profile in the background — don't let it block navigation
-      refreshProfile().catch(() => {});
+      refreshProfile().catch(() => { });
       router.replace("/");
     } catch {
       setValidation({
