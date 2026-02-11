@@ -5,6 +5,27 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { searchTechnologies, addCustomTechnology } from "@/actions/developer-profiles";
 
+const FLUORO_COLORS = [
+  "#39FF14", // neon green
+  "#FF6EC7", // hot pink
+  "#00FFFF", // cyan
+  "#FFFF00", // yellow
+  "#FF9F1C", // neon orange
+  "#7DF9FF", // electric blue
+  "#FF44CC", // magenta
+  "#ADFF2F", // green-yellow
+  "#00FF7F", // spring green
+  "#FF073A", // neon red
+];
+
+function getFluoroColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return FLUORO_COLORS[Math.abs(hash) % FLUORO_COLORS.length];
+}
+
 interface Tech {
   id: number;
   name: string;
@@ -107,7 +128,7 @@ export function TechStackPicker({ selectedTechs, onChange }: TechStackPickerProp
     <div ref={containerRef} className="space-y-2">
       <div className="flex flex-wrap gap-1.5 min-h-[32px]">
         {selectedTechs.map((tech) => (
-          <Badge key={tech.id} color="#2A2A2A" className="gap-1">
+          <Badge key={tech.id} color={getFluoroColor(tech.name)} className="gap-1">
             {tech.name}
             <button type="button" onClick={() => removeTech(tech.id)} className="ml-1 text-content-muted hover:text-content">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

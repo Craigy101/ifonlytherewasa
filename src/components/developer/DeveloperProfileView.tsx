@@ -4,6 +4,27 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
+const FLUORO_COLORS = [
+  "#39FF14", // neon green
+  "#FF6EC7", // hot pink
+  "#00FFFF", // cyan
+  "#FFFF00", // yellow
+  "#FF9F1C", // neon orange
+  "#7DF9FF", // electric blue
+  "#FF44CC", // magenta
+  "#ADFF2F", // green-yellow
+  "#00FF7F", // spring green
+  "#FF073A", // neon red
+];
+
+function getFluoroColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return FLUORO_COLORS[Math.abs(hash) % FLUORO_COLORS.length];
+}
+
 interface DeveloperProfileViewProps {
   bio: string;
   githubUsername: string;
@@ -47,7 +68,7 @@ export function DeveloperProfileView({ bio, githubUsername, technologies, onEdit
           <p className="text-xs font-medium text-content-muted uppercase tracking-wide mb-2">Tech Stack</p>
           <div className="flex flex-wrap gap-1.5">
             {technologies.map((tech) => (
-              <Badge key={tech.id} color="#2A2A2A">{tech.name}</Badge>
+              <Badge key={tech.id} color={getFluoroColor(tech.name)}>{tech.name}</Badge>
             ))}
           </div>
         </div>

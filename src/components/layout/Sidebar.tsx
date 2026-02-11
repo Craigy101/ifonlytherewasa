@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { CATEGORIES } from "@/lib/config/categories";
+import { FeatureRequestButton } from "@/components/feedback/FeatureRequestButton";
 import { cn } from "@/lib/utils/cn";
 
 interface SidebarProps {
@@ -45,6 +46,11 @@ export function Sidebar({ className }: SidebarProps) {
             </Link>
           ))}
         </nav>
+      </div>
+
+      {/* Feature request */}
+      <div className="mt-6 border-t border-surface-border pt-4">
+        <FeatureRequestButton />
       </div>
     </aside>
   );

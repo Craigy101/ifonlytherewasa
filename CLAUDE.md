@@ -4,7 +4,7 @@ When you make changes that affect the functionality of the project or big change
 
 # Project: If Only There Was A
 
-Next.js 14 + Supabase + Tailwind + Tiptap rich text editor.
+Next.js 16 + React 19 + Supabase + Tailwind + Tiptap rich text editor.
 
 ## Build & Check Commands
 
@@ -26,8 +26,8 @@ Always run `npx tsc --noEmit` before `npm run build` to catch type errors early.
 
 When integrating a new non-trivial package or using unfamiliar APIs, **always look up the official documentation for the specific versions we use** — do NOT rely on memory, as APIs change between major versions:
 
-- **Next.js 14** (NOT 15 — no App Router breaking changes like async `cookies()`)
-- **React 18** (NOT 19 — no `use()`, no server actions built-in, etc.)
+- **Next.js 16** (uses Turbopack by default, `proxy.ts` replaces `middleware.ts`)
+- **React 19** (`use()` available, `useActionState` replaces `useFormState`)
 - **@supabase/supabase-js v2** and **@supabase/ssr v0.8**
 
 This applies to any significant library — if you're unsure about an API, check the docs for our version first.
@@ -37,7 +37,7 @@ This applies to any significant library — if you're unsure about an API, check
 ### Client Initialization
 - **Browser client** (`src/lib/supabase/client.ts`): `createBrowserClient` from `@supabase/ssr` is a **singleton** internally — calling `createClient()` multiple times returns the same instance
 - **Server client** (`src/lib/supabase/server.ts`): `createServerClient` with async cookie access — create fresh per request, never cache
-- **Middleware** (`middleware.ts`): Create client inline with request/response cookie handlers — call `supabase.auth.getUser()` **immediately** after creation, no logic in between
+- **Proxy** (`proxy.ts`): Create client inline with request/response cookie handlers — call `supabase.auth.getUser()` **immediately** after creation, no logic in between
 
 ### Client Usage in React
 - In **providers/long-lived components**: wrap with `useState(() => createClient())` for a stable reference that won't trigger dependency array churn
@@ -46,7 +46,7 @@ This applies to any significant library — if you're unsure about an API, check
 
 ### Auth Flow
 - `handle_new_user` trigger on `auth.users` auto-creates a profile row on signup with a temp `user_xxxxxxxxxxxx` username
-- Middleware redirects to `/setup-username` if `profile.username` is missing or starts with `user_`
+- Proxy redirects to `/setup-username` if `profile.username` is missing or starts with `user_`
 - `UsernameSetupForm` **UPDATEs** the existing profile row (does NOT insert)
 
 ## Key Patterns

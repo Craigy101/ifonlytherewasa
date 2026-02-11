@@ -80,7 +80,7 @@ export function NotificationItem({
         <p className="text-sm text-content-secondary truncate mt-0.5">
           {post.title}
         </p>
-        <p className="text-xs text-content-muted mt-1">
+        <p className="text-xs text-content-muted mt-1" suppressHydrationWarning>
           {getRelativeTime(created_at)}
         </p>
       </div>

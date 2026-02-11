@@ -76,7 +76,7 @@ export function DeveloperProfileForm({ initialData, onSubmit, onCancel }: Develo
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-4">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : initialData ? "Update Profile" : "Create Developer Profile"}
           </Button>

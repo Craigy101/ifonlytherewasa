@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { NotificationProvider } from "@/components/providers/NotificationProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { AdBlockDetector } from "@/components/ads/AdBlockDetector";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -38,7 +39,10 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans`}>
         <AuthProvider>
           <NotificationProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              {children}
+              <AdBlockDetector />
+            </ToastProvider>
           </NotificationProvider>
         </AuthProvider>
       </body>

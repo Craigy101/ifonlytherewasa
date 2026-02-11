@@ -2,7 +2,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Footer } from "@/components/layout/Footer";
-import { AdBlockDetector } from "@/components/ads/AdBlockDetector";
+
 import { SidebarAd } from "@/components/ads/SidebarAd";
 
 export default function MainLayout({
@@ -26,7 +26,6 @@ export default function MainLayout({
       </div>
       <MobileNav className="lg:hidden" />
       <Footer />
-      <AdBlockDetector />
     </>
   );
 }

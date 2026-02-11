@@ -15,7 +15,7 @@ interface SearchIndexFormProps {
     category_ids: number[];
     keyword_patterns: string[];
     min_pay_reactions: number | null;
-    min_weekly_pay_usd: number | null;
+    min_weekly_pay_usd?: number | null;
   };
   onSubmit: (data: {
     name: string;
@@ -32,7 +32,8 @@ export function SearchIndexForm({ initialData, onSubmit, categories }: SearchInd
   const [name, setName] = useState(initialData?.name ?? "");
   const [productTypes, setProductTypes] = useState<string[]>(initialData?.product_types ?? []);
   const [categoryIds, setCategoryIds] = useState<number[]>(initialData?.category_ids ?? []);
-  const [keywords, setKeywords] = useState<string[]>(initialData?.keyword_patterns ?? [""]);
+  const [keywords, setKeywords] = useState<string[]>(initialData?.keyword_patterns ?? []);
+  const [keywordInput, setKeywordInput] = useState("");
   const [minPay, setMinPay] = useState<string>(initialData?.min_pay_reactions?.toString() ?? "");
   const [minWeeklyPay, setMinWeeklyPay] = useState<string>(initialData?.min_weekly_pay_usd?.toString() ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,16 +51,15 @@ export function SearchIndexForm({ initialData, onSubmit, categories }: SearchInd
     );
   };
 
-  const updateKeyword = (index: number, value: string) => {
-    setKeywords((prev) => prev.map((k, i) => (i === index ? value : k)));
+  const addKeyword = (value: string) => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed || keywords.length >= 10 || keywords.includes(trimmed)) return;
+    setKeywords((prev) => [...prev, trimmed]);
+    setKeywordInput("");
   };
 
-  const addKeyword = () => {
-    if (keywords.length < 10) setKeywords([...keywords, ""]);
-  };
-
-  const removeKeyword = (index: number) => {
-    setKeywords((prev) => prev.filter((_, i) => i !== index));
+  const removeKeyword = (keyword: string) => {
+    setKeywords((prev) => prev.filter((k) => k !== keyword));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +75,7 @@ export function SearchIndexForm({ initialData, onSubmit, categories }: SearchInd
         name,
         product_types: productTypes,
         category_ids: categoryIds,
-        keyword_patterns: keywords.filter(Boolean),
+        keyword_patterns: keywords,
         min_pay_reactions: minPay ? parseInt(minPay) : null,
         min_weekly_pay_usd: minWeeklyPay ? parseInt(minWeeklyPay) : null,
       });
@@ -91,7 +91,7 @@ export function SearchIndexForm({ initialData, onSubmit, categories }: SearchInd
       <Card className="p-6 space-y-6">
         <div>
           <label className="block text-sm font-medium text-content-secondary mb-2">Index Name</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. React Web Apps" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. High Pain HealthCare SaaS" />
         </div>
 
         <div>
@@ -136,23 +136,34 @@ export function SearchIndexForm({ initialData, onSubmit, categories }: SearchInd
           <label className="block text-sm font-medium text-content-secondary mb-2">
             Keyword Patterns <span className="text-content-muted">(posts matching any keyword)</span>
           </label>
-          <div className="space-y-2">
-            {keywords.map((kw, i) => (
-              <div key={i} className="flex gap-2">
-                <Input value={kw} onChange={(e) => updateKeyword(i, e.target.value)} placeholder="e.g. react, dashboard" className="flex-1" />
-                {keywords.length > 1 && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeKeyword(i)}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {keywords.map((kw) => (
+                <Badge key={kw} className="gap-1">
+                  {kw}
+                  <button type="button" onClick={() => removeKeyword(kw)} className="ml-1 text-content-muted hover:text-content">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  </Button>
-                )}
-              </div>
-            ))}
-            {keywords.length < 10 && (
-              <Button type="button" variant="ghost" size="sm" onClick={addKeyword}>+ Add keyword</Button>
-            )}
-          </div>
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          <Input
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addKeyword(keywordInput);
+              }
+            }}
+            placeholder="Type a keyword and press Enter to add..."
+          />
+          {keywords.length >= 10 && (
+            <p className="text-xs text-amber-400 mt-1">Maximum 10 keywords</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

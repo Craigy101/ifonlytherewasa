@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { FeedList } from "@/components/feed/FeedList";
 import { CategoryFilter } from "@/components/feed/CategoryFilter";
-import { FeedControls, parseFeedFilters } from "@/components/feed/FeedControls";
+import { FeedSection } from "@/components/feed/FeedSection";
+import { parseFeedFilters } from "@/lib/feed-filters";
 import { CATEGORIES } from "@/lib/config/categories";
 
 export const revalidate = 30;
@@ -21,7 +21,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .select(
       `
       id, title, slug, body, created_at, is_solved,
-      weekly_pay_usd, time_spent_weekly, current_solution,
+      weekly_pay_usd, time_spent_weekly, current_solution, product_type,
       reaction_pay, reaction_nice, reaction_meh, reaction_bad,
       comment_count, popularity_score,
       author:profiles!author_id(username, avatar_url),
@@ -38,6 +38,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     query = query.gte("weekly_pay_usd", filters.minSpend);
   }
 
+  if (filters.productType) {
+    query = query.eq("product_type", filters.productType);
+  }
+
   if (filters.sort === "recent") {
     query = query.order("created_at", { ascending: false });
   } else {
@@ -49,12 +53,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <div>
       <CategoryFilter categories={CATEGORIES} />
-      <FeedControls filters={filters} />
-      <FeedList
+      <FeedSection
         initialPosts={posts || []}
-        sort={filters.sort}
-        minInterested={filters.minInterested}
-        minSpend={filters.minSpend}
+        initialFilters={filters}
       />
     </div>
   );

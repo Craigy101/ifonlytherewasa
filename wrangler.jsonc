@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "pain-pointy",
+  "compatibility_date": "2026-02-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Required: worker self-reference for internal routing
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "pain-pointy"
+    }
+  ],
+  // R2 bucket for ISR incremental cache (revalidate)
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "pain-pointy-cache"
+    }
+  ]
+}

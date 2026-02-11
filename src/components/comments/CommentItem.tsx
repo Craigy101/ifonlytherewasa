@@ -107,7 +107,7 @@ export function CommentItem({
             {comment.author.username}
           </span>
           <span className="text-content-muted text-xs">&middot;</span>
-          <span className="text-xs text-content-muted">
+          <span className="text-xs text-content-muted" suppressHydrationWarning>
             {getRelativeTime(comment.created_at)}
           </span>
         </div>

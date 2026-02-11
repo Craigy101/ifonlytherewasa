@@ -35,12 +35,41 @@ export const CATEGORIES: CategoryConfig[] = [
     description: "Banking, investing, budgeting, and money management",
     color: "#22C55E",
   },
+    {
+    id: 10,
+    name: "Work & Productivity",
+    slug: "work-productivity",
+    description: "Workplace tools, project management, and career",
+    color: "#6366F1",
+  },
   {
     id: 5,
     name: "Home & Living",
     slug: "home-living",
     description: "Household, organization, cleaning, and home improvement",
     color: "#F59E0B",
+  },
+    {
+    id: 9,
+    name: "Social",
+    slug: "social",
+    description: "Communication, community, relationships, and events",
+    color: "#EC4899",
+  },
+    {
+    id: 8,
+    name: "Environment",
+    slug: "environment",
+    description: "Sustainability, recycling, energy, and conservation",
+    color: "#10B981",
+  },
+
+  {
+    id: 11,
+    name: "Entertainment",
+    slug: "entertainment",
+    description: "Gaming, media, hobbies, and leisure activities",
+    color: "#A855F7",
   },
   {
     id: 6,
@@ -56,34 +85,8 @@ export const CATEGORIES: CategoryConfig[] = [
     description: "Cooking, restaurants, groceries, and meal planning",
     color: "#F97316",
   },
-  {
-    id: 8,
-    name: "Environment",
-    slug: "environment",
-    description: "Sustainability, recycling, energy, and conservation",
-    color: "#10B981",
-  },
-  {
-    id: 9,
-    name: "Social",
-    slug: "social",
-    description: "Communication, community, relationships, and events",
-    color: "#EC4899",
-  },
-  {
-    id: 10,
-    name: "Work & Productivity",
-    slug: "work-productivity",
-    description: "Workplace tools, project management, and career",
-    color: "#6366F1",
-  },
-  {
-    id: 11,
-    name: "Entertainment",
-    slug: "entertainment",
-    description: "Gaming, media, hobbies, and leisure activities",
-    color: "#A855F7",
-  },
+
+
   {
     id: 12,
     name: "Other",

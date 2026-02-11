@@ -25,8 +25,8 @@ function Badge({
 
   const variantClasses =
     variant === "outline"
-      ? "border border-surface-border text-content-secondary"
-      : "bg-surface-hover text-content-secondary";
+      ? "border border-surface-border text-content-primary"
+      : "bg-surface-hover text-content-primary";
 
   if (color) {
     return (

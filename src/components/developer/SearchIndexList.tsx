@@ -15,7 +15,7 @@ interface SearchIndex {
   category_ids: number[];
   keyword_patterns: string[];
   min_pay_reactions: number | null;
-  min_weekly_pay_usd: number | null;
+  min_weekly_pay_usd?: number | null;
   is_active: boolean;
   is_free: boolean;
 }

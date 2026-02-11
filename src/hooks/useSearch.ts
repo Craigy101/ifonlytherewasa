@@ -19,6 +19,7 @@ interface IndexDoc {
   id: string;
   title: string;
   slug: string;
+  body: string;
   cs: string;
 }
 
@@ -52,13 +53,13 @@ function getSearchIndex(): Promise<MiniSearch<IndexDoc> | null> {
       })
       .then((docs) => {
         const ms = new MiniSearch<IndexDoc>({
-          fields: ["title", "cs"],
-          storeFields: ["title", "slug", "cs"],
+          fields: ["title", "body", "cs"],
+          storeFields: ["title", "slug", "body", "cs"],
           processTerm,
           searchOptions: {
             prefix: true,
             fuzzy: 0.2,
-            boost: { title: 2 },
+            boost: { title: 3, body: 2, cs: 1 },
           },
         });
         return ms.addAllAsync(docs).then(() => ms);
@@ -108,7 +109,7 @@ export function useSearch() {
         hits.slice(0, 6).map((h) => ({
           slug: h.slug as string,
           title: h.title as string,
-          body: "",
+          body: (h.body as string) || "",
           current_solution: (h.cs as string) || null,
         }))
       );

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { PRODUCT_TYPE_LABELS } from "@/lib/feed-filters";
+import type { ProductType } from "@/lib/feed-filters";
 
 interface PostAuthor {
   username: string | null;
@@ -29,6 +31,7 @@ export interface PostCardData {
   weekly_pay_usd?: number | null;
   time_spent_weekly?: string | null;
   current_solution?: string | null;
+  product_type?: ProductType | null;
   author: PostAuthor;
   categories: PostCategory[] | { category: PostCategory }[];
 }
@@ -103,7 +106,7 @@ export function PostCard({ post }: PostCardProps) {
   const bodyPreview = stripHtml(post.body).slice(0, 150);
   const topReaction = getTopReaction(post);
   const categories = normalizeCategories(post.categories);
-  const hasPainData = post.weekly_pay_usd || post.time_spent_weekly || post.current_solution;
+  const hasPainData = post.weekly_pay_usd || post.time_spent_weekly || post.current_solution || post.product_type;
 
   return (
     <Link href={`/post/${post.slug}`} className="block">
@@ -119,7 +122,7 @@ export function PostCard({ post }: PostCardProps) {
             {post.author.username || "Anonymous"}
           </span>
           <span className="text-content-muted text-xs">&middot;</span>
-          <span className="text-xs text-content-muted">
+          <span className="text-xs text-content-muted" suppressHydrationWarning>
             {getRelativeTime(post.created_at)}
           </span>
         </div>
@@ -154,7 +157,12 @@ export function PostCard({ post }: PostCardProps) {
         {/* Pain point data chips */}
         {hasPainData && (
           <div className="flex flex-wrap gap-2 mt-3">
-            {post.weekly_pay_usd && (
+            {post.product_type && (
+              <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                {PRODUCT_TYPE_LABELS[post.product_type]}
+              </span>
+            )}
+            {!!post.weekly_pay_usd && (
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
                 ${post.weekly_pay_usd}/wk
               </span>
@@ -184,19 +192,20 @@ export function PostCard({ post }: PostCardProps) {
         )}
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 mt-3 text-xs text-content-muted">
+        <div className="flex items-center gap-4 mt-3 text-sm text-content-muted">
           {totalReactions > 0 && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
               {topReaction && (
-                <span>{topReaction.icon}</span>
+                <span className="text-lg">{topReaction.icon}</span>
               )}
               <span>{totalReactions}</span>
             </span>
           )}
-          <span className="flex items-center gap-1">
-            <span>{"\uD83D\uDCAC"}</span>
-            <span>{post.comment_count}</span>
-          </span>
+          {post.comment_count > 0 && (
+            <span className="text-content-secondary hover:text-content transition-colors">
+              See {post.comment_count} comment{post.comment_count !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
       </Card>
     </Link>

@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useCallback, Fragment } from "react";
-import { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { PostCard } from "./PostCard";
 import { PostCardSkeleton } from "./PostCardSkeleton";
 import { FeedAd } from "@/components/ads/FeedAd";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import type { PostCardData } from "./PostCard";
-import type { FeedSort } from "./FeedControls";
+import type { FeedSort, ProductType } from "@/lib/feed-filters";
 
 const PAGE_SIZE = 20;
 
 const POST_SELECT = `
   id, title, slug, body, created_at, is_solved,
-  weekly_pay_usd, time_spent_weekly, current_solution,
+  weekly_pay_usd, time_spent_weekly, current_solution, product_type,
   reaction_pay, reaction_nice, reaction_meh, reaction_bad,
   comment_count, popularity_score,
   author:profiles!author_id(username, avatar_url),
@@ -22,7 +22,7 @@ const POST_SELECT = `
 
 const POST_SELECT_CATEGORY = `
   id, title, slug, body, created_at, is_solved,
-  weekly_pay_usd, time_spent_weekly, current_solution,
+  weekly_pay_usd, time_spent_weekly, current_solution, product_type,
   reaction_pay, reaction_nice, reaction_meh, reaction_bad,
   comment_count, popularity_score,
   author:profiles!author_id(username, avatar_url),
@@ -30,19 +30,23 @@ const POST_SELECT_CATEGORY = `
 `;
 
 interface FeedListProps {
+  supabase: SupabaseClient;
   initialPosts: PostCardData[];
   categorySlug?: string;
   sort?: FeedSort;
   minInterested?: number;
   minSpend?: number;
+  productType?: ProductType | "";
 }
 
 export function FeedList({
+  supabase,
   initialPosts,
   categorySlug,
   sort = "popular",
   minInterested = 0,
   minSpend = 0,
+  productType = "",
 }: FeedListProps) {
   const [posts, setPosts] = useState<PostCardData[]>(initialPosts);
   const [page, setPage] = useState(1);
@@ -53,7 +57,6 @@ export function FeedList({
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
@@ -74,6 +77,10 @@ export function FeedList({
 
       if (minSpend > 0) {
         query = query.gte("weekly_pay_usd", minSpend);
+      }
+
+      if (productType) {
+        query = query.eq("product_type", productType);
       }
 
       if (sort === "recent") {
@@ -99,7 +106,7 @@ export function FeedList({
     } finally {
       setIsLoading(false);
     }
-  }, [page, categorySlug, sort, minInterested, minSpend]);
+  }, [supabase, page, categorySlug, sort, minInterested, minSpend, productType]);
 
   const { sentinelRef } = useInfiniteScroll({
     loadMore,
@@ -124,9 +131,15 @@ export function FeedList({
         </>
       )}
 
-      {!hasMore && posts.length > 0 && (
+      {!isLoading && !hasMore && posts.length > 0 && (
         <p className="text-content-muted text-center py-8 text-sm">
           You&apos;ve reached the end
+        </p>
+      )}
+
+      {!isLoading && posts.length === 0 && (
+        <p className="text-content-muted text-center py-12 text-sm">
+          No posts match these filters
         </p>
       )}
 

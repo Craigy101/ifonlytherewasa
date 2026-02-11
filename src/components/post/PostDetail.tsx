@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PostMeta } from "@/components/post/PostMeta";
 import { RichTextContent } from "@/components/post/RichTextContent";
 import { ReactionBar } from "@/components/post/ReactionBar";
@@ -66,9 +66,10 @@ export function PostDetail({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const canEdit =
-    isOwnPost &&
-    Date.now() - new Date(post.created_at).getTime() < 3600000;
+  const canEdit = useMemo(
+    () => isOwnPost && Date.now() - new Date(post.created_at).getTime() < 3600000,
+    [isOwnPost, post.created_at]
+  );
 
   const handleDelete = async () => {
     setIsDeleting(true);

@@ -245,6 +245,30 @@ export type Database = {
           },
         ]
       }
+      feature_requests: {
+        Row: {
+          body: string
+          contact_ok: boolean
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          contact_ok?: boolean
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          contact_ok?: boolean
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           actor_id: string
@@ -445,24 +469,24 @@ export type Database = {
           created_at: string
           id: string
           updated_at: string
-          username: string
-          username_lower: string
+          username: string | null
+          username_lower: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           id: string
           updated_at?: string
-          username: string
-          username_lower?: string
+          username?: string | null
+          username_lower?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           id?: string
           updated_at?: string
-          username?: string
-          username_lower?: string
+          username?: string | null
+          username_lower?: string | null
         }
         Relationships: []
       }
@@ -710,6 +734,7 @@ export type Database = {
           body: string
           comment_count: number
           created_at: string
+          current_solution: string
           id: string
           rank: number
           reaction_bad: number
@@ -742,6 +767,8 @@ export type Database = {
         | "desktop_app"
         | "hardware"
         | "physical_product"
+        | "automation"
+        | "ai_model"
       reaction_type: "pay" | "nice" | "meh" | "bad"
     }
     CompositeTypes: {
@@ -882,6 +909,8 @@ export const Constants = {
         "desktop_app",
         "hardware",
         "physical_product",
+        "automation",
+        "ai_model",
       ],
       reaction_type: ["pay", "nice", "meh", "bad"],
     },
