@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s | If Only There Was A",
   },
   description:
-    "A community where people share problems they wish had solutions. Post your 'if only there was a...' ideas and discover what others need.",
+    "A community where people share problems they wish had solutions. Post your 'if only there was a...' ideas and discover what others need so devs actually know what to build.",
   openGraph: {
     type: "website",
     siteName: "If Only There Was A",
